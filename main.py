@@ -49,7 +49,7 @@ def analisar_mensagens(texto_cliente):
         resultado = json.loads(texto_resposta)
         return resultado
     except json.JSONDecodeError:
-        print(f"⚠️ Erro ao interpretar resposta da IA para: {texto_cliente}")
+        print(f"Erro ao interpretar resposta da IA para: {texto_cliente}")
         return None
 
     # aqui de fato estamos usando a função, esse bloco vai criar uma lista de resultados com as análises das mensagens dos clientes
@@ -67,7 +67,7 @@ def salvar_resultados_csv(resultados, nome_arquivo="resultados_triagem.csv"):
         escritor.writeheader()
         escritor.writerows(resultados)
 
-    print(f"✅ Resultados salvos em: {nome_arquivo}")
+    print(f"Resultados salvos em: {nome_arquivo}")
 
 if __name__ == "__main__": #não é necessário nesse momento, mas adicionei pois é uma boa prática 
     resultados = []
