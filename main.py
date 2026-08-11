@@ -1,7 +1,8 @@
 import os
 import json
+import csv
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 # Usado para carregar a variável de ambiente do arquivo .env
 load_dotenv()
@@ -10,7 +11,7 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
 # Configura o SDK do Gemini com a chave
-genai.configure(api_key=api_key)
+client = genai.Client(api_key=api_key)
 
 # lista das mensagens (mockadas) dos supostos clientes que serão analisadas pelo modelo
 mensagens_clientes = [ "Meu acesso foi bloqueado e eu preciso enviar um relatório hoje! Isso é urgente!",
@@ -20,7 +21,6 @@ mensagens_clientes = [ "Meu acesso foi bloqueado e eu preciso enviar um relatór
 
 # função que analisa a mensagem e retorna um json com a estrutura solicitada, que será usado como resposta para o cliente
 def analisar_mensagens(texto_cliente):
-    modelo = genai.GenerativeModel("gemini-2.5-flash")
 
     prompt = f"""
     Você é um assistente de triagem de atendimento ao cliente.
@@ -36,7 +36,10 @@ def analisar_mensagens(texto_cliente):
     Mensagem do cliente: "{texto_cliente}"
     """
 
-    resposta = modelo.generate_content(prompt)
+    resposta = client.models.generate_content(
+    model="gemini-3.6-flash",
+    contents=prompt
+)
     texto_resposta = resposta.text.strip()
     
     # Remove possíveis marcações de markdown geradas pelo modelo, como ```json e ``` no início e no fim da resposta
@@ -50,6 +53,22 @@ def analisar_mensagens(texto_cliente):
         return None
 
     # aqui de fato estamos usando a função, esse bloco vai criar uma lista de resultados com as análises das mensagens dos clientes
+
+def salvar_resultados_csv(resultados, nome_arquivo="resultados_triagem.csv"):
+    # trava de segurança, caso a análise falhar, devido a trava anterior, pode ser que a lista "resultados" esteja vazia.
+    if not resultados:
+        print("Nenhum resultado para salvar.")
+        return
+
+    colunas = resultados[0].keys() # pega as chaves do primeiro dicionario da lista, e usa como cabeçalho. Isso funciona pois os dicionários tem a mesma estrutura
+
+    with open(nome_arquivo, mode="w", newline="", encoding="utf-8") as arquivo_csv:
+        escritor = csv.DictWriter(arquivo_csv, fieldnames=colunas)
+        escritor.writeheader()
+        escritor.writerows(resultados)
+
+    print(f"✅ Resultados salvos em: {nome_arquivo}")
+
 if __name__ == "__main__": #não é necessário nesse momento, mas adicionei pois é uma boa prática 
     resultados = []
     
@@ -72,3 +91,5 @@ if __name__ == "__main__": #não é necessário nesse momento, mas adicionei poi
             })
         else:
             print("  → Não foi possível analisar esta mensagem.\n")
+
+    salvar_resultados_csv(resultados)
